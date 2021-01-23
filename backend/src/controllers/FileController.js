@@ -13,7 +13,9 @@ class FileController {
         box.files.push(file);
         await box.save();
 
-        req.io.sockets.in(box._id).emit('file', file);
+        const loggedSocket = req.connectedUsers[box._id];
+
+        req.io.to(loggedSocket).emit('file', file);
 
         return res.json(file);
     }

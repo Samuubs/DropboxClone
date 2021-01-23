@@ -4,16 +4,20 @@ const path = require('path');
 const cors = require("cors");
 
 const app = express();
-
 app.use(cors());
 
 const server = require('http').Server(app);
-const io = require('socket.io')(server);
+const io = require('socket.io')(server, {
+    cors: {
+        origin: "http://localhost:3000",
+        credentials: true
+    }
+});
 
+const connectedUsers = {}
 io.on('connection', socket => {
-    socket.on('connectRoom', box => {
-        socket.join(box);
-    });
+    const { user } = socket.handshake.query;
+    connectedUsers[user] = socket.id;
 });
 
 mongoose.connect('mongodb+srv://adm:adm123@cluster0.6vjor.mongodb.net/DropboxClone?retryWrites=true&w=majority', {
@@ -23,8 +27,10 @@ mongoose.connect('mongodb+srv://adm:adm123@cluster0.6vjor.mongodb.net/DropboxClo
 
 app.use((req, res, next) => {
     req.io = io;
+    req.connectedUsers = connectedUsers;
+
     return next();
-});
+})
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
